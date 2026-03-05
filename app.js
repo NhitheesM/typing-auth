@@ -37,34 +37,51 @@ function createCapture(el, onUpdate) {
   const session = {
     el,
     onUpdate,
-    keyDownTimes: {},   // key → timestamp of most recent keydown
-    events: [],         // [{char, dwell, flight}]
-    lastKeyUp: null,    // timestamp of last keyup (for flight calc)
+    events: [],    // [{char, dwell, flight}]
+    lastInputTime: null,  // timestamp of last input event
+    prevLength: 0,     // textarea length before last input
+    pendingDwell: null,  // dwell from keydown/keyup if available (desktop)
+    keyDownTimes: {},    // key → keydown timestamp (desktop supplement)
     listening: false,
   };
 
+  // PRIMARY – input event fires on ALL devices including mobile
+  session.handleInput = () => {
+    const now = performance.now();
+    const text = el.value;
+
+    if (text.length > session.prevLength) {
+      // A character was added
+      const char = text[text.length - 1];
+      const flight = session.lastInputTime !== null ? now - session.lastInputTime : 0;
+      const dwell = session.pendingDwell !== null ? session.pendingDwell : 60; // 60ms default on mobile
+
+      if (char && char.length === 1) {
+        session.events.push({ char, dwell, flight });
+        if (onUpdate) onUpdate(session);
+      }
+    }
+
+    session.lastInputTime = now;
+    session.prevLength = text.length;
+    session.pendingDwell = null;
+  };
+
+  // SUPPLEMENT – keydown/keyup gives real dwell on desktop
   session.handleKeyDown = (e) => {
-    session.keyDownTimes[e.key] = performance.now();
+    if (e.key && e.key.length === 1) {
+      session.keyDownTimes[e.key] = performance.now();
+    }
   };
 
   session.handleKeyUp = (e) => {
-    const now = performance.now();
-    const downTime = session.keyDownTimes[e.key];
-    if (downTime === undefined) return;   // missed keydown
-
-    const dwell = now - downTime;
-    const flight = session.lastKeyUp !== null ? downTime - session.lastKeyUp : 0;
-    session.lastKeyUp = now;
-
-    // Only record printable characters
-    if (e.key.length === 1) {
-      session.events.push({ char: e.key, dwell, flight });
-      if (onUpdate) onUpdate(session);
+    if (e.key && session.keyDownTimes[e.key] !== undefined) {
+      session.pendingDwell = performance.now() - session.keyDownTimes[e.key];
+      delete session.keyDownTimes[e.key];
     }
-
-    delete session.keyDownTimes[e.key];
   };
 
+  el.addEventListener('input', session.handleInput);
   el.addEventListener('keydown', session.handleKeyDown);
   el.addEventListener('keyup', session.handleKeyUp);
   session.listening = true;
@@ -72,9 +89,10 @@ function createCapture(el, onUpdate) {
   return session;
 }
 
-/** Remove listeners and return collected events. */
+/** Remove all listeners and return captured events. */
 function stopCapture(session) {
   if (!session || !session.listening) return [];
+  session.el.removeEventListener('input', session.handleInput);
   session.el.removeEventListener('keydown', session.handleKeyDown);
   session.el.removeEventListener('keyup', session.handleKeyUp);
   session.listening = false;
