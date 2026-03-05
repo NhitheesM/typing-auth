@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KeySign – Typing Pattern Authentication</title>
+  <meta name="description"
+    content="Authenticate users by their unique typing rhythm using keystroke dynamics biometrics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ── Background decoration ── -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- ── App Shell ── -->
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">⌨️</span>
+        <span class="logo-text">Key<span class="logo-accent">Sign</span></span>
+      </div>
+      <p class="tagline">Biometric authentication through your unique typing rhythm</p>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" role="tablist">
+      <button id="tab-register" class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('register')">
+        <span class="tab-icon">🛡️</span> Register
+      </button>
+      <button id="tab-login" class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('login')">
+        <span class="tab-icon">🔑</span> Login
+      </button>
+    </nav>
+
+    <!-- ── REGISTER PANEL ── -->
+    <section id="panel-register" class="panel active" aria-label="Registration panel">
+      <div class="card">
+        <div class="card-header">
+          <h1 class="card-title">Create Your Typing Profile</h1>
+          <p class="card-subtitle">Type the passphrase <strong>3 times</strong> so we can learn your rhythm.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-username" class="form-label">Username</label>
+          <input type="text" id="reg-username" class="form-input" placeholder="Enter your username"
+            autocomplete="off" />
+        </div>
+
+        <div class="passphrase-display">
+          <span class="passphrase-label">Passphrase</span>
+          <p class="passphrase-text" id="reg-passphrase-text">"Cybersecurity is the future"</p>
+        </div>
+
+        <!-- Sample progress -->
+        <div class="sample-progress" id="sample-progress">
+          <div class="sample-dots">
+            <div class="dot" id="dot-1"></div>
+            <div class="dot" id="dot-2"></div>
+            <div class="dot" id="dot-3"></div>
+          </div>
+          <span class="sample-label" id="sample-label">Sample 1 of 3</span>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-input" class="form-label typing-hint">
+            Start typing the passphrase below
+            <span class="cursor-blink">|</span>
+          </label>
+          <textarea id="reg-input" class="form-textarea" placeholder='Type: "Cybersecurity is the future"' rows="2"
+            spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+
+        <div class="feedback-bar" id="reg-feedback"></div>
+
+        <button id="reg-submit-btn" class="btn btn-primary" onclick="submitRegistrationSample()" disabled>
+          Submit Sample
+        </button>
+
+        <button id="reg-reset-btn" class="btn btn-ghost" onclick="resetRegistration()" style="display:none">
+          Start Over
+        </button>
+      </div>
+    </section>
+
+    <!-- ── LOGIN PANEL ── -->
+    <section id="panel-login" class="panel" aria-label="Login panel">
+      <div class="card">
+        <div class="card-header">
+          <h1 class="card-title">Verify Your Identity</h1>
+          <p class="card-subtitle">Type the passphrase — your rhythm does the talking.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="login-username" class="form-label">Username</label>
+          <input type="text" id="login-username" class="form-input" placeholder="Enter your username"
+            autocomplete="off" />
+        </div>
+
+        <div class="passphrase-display">
+          <span class="passphrase-label">Passphrase</span>
+          <p class="passphrase-text">"Cybersecurity is the future"</p>
+        </div>
+
+        <div class="form-group">
+          <label for="login-input" class="form-label typing-hint">
+            Type the passphrase naturally
+            <span class="cursor-blink">|</span>
+          </label>
+          <textarea id="login-input" class="form-textarea" placeholder='Type: "Cybersecurity is the future"' rows="2"
+            spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+
+        <div class="feedback-bar" id="login-feedback"></div>
+
+        <button id="login-submit-btn" class="btn btn-primary" onclick="submitLogin()" disabled>
+          Authenticate
+        </button>
+
+        <button class="btn btn-ghost" onclick="clearProfile()">
+          🗑️ Clear Saved Profile
+        </button>
+      </div>
+    </section>
+
+  </div><!-- /app-wrapper -->
+
+  <!-- ── RESULT OVERLAY ── -->
+  <div id="result-overlay" class="result-overlay hidden" role="dialog" aria-modal="true">
+    <div class="result-card" id="result-card">
+      <div class="result-icon" id="result-icon"></div>
+      <h2 class="result-title" id="result-title"></h2>
+      <p class="result-message" id="result-message"></p>
+
+      <div class="confidence-wrap">
+        <span class="confidence-label">Confidence Score</span>
+        <div class="confidence-bar-bg">
+          <div class="confidence-bar-fill" id="confidence-fill"></div>
+        </div>
+        <span class="confidence-pct" id="confidence-pct"></span>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeResult()">Continue</button>
+    </div>
+  </div>
+
+  <!-- ── TOAST ── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
